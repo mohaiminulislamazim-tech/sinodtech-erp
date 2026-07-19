@@ -12,17 +12,17 @@ Professional Enterprise Resource Planning (ERP) system built with Laravel 11, Ta
 ## 📸 Screenshots
 
 ### Dashboard & Analytics
-| ![Dashboard Dark](./screenshots/dashboard_dark.png) | ![Charts](./screenshots/charts.png) |
+| ![Dashboard Dark](./screenshots/dashboard_dark) | ![Charts](./screenshots/charts) |
 |:---:|:---:|
 | *Real-time Analytics (Dark Mode)* | *Performance Charts* |
 
 ### Sales & POS
-| ![POS System](./screenshots/pos.png) | ![Login](./screenshots/login.png) |
+| ![POS System](./screenshots/pos) | ![Login](./screenshots/login.png) |
 |:---:|:---:|
 | *Point of Sale Interface* | *Secure Login* |
 
 ### Operations
-| ![Inventory](./screenshots/inventory.png) | ![Reports](./screenshots/reports.png) |
+| ![Inventory](./screenshots/inventory) | ![Reports](./screenshots/reports) |
 |:---:|:---:|
 | *Inventory Tracking* | *Detailed Reporting* |
 
