@@ -2,51 +2,46 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
-use App\Http\Requests\StoreTransactionRequest;
 use App\Models\Transaction;
-use App\Models\Sale;
+use App\Models\Branch;
+use App\Http\Requests\StoreTransactionRequest;
+use Illuminate\Http\Request;
 
 class TransactionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $transactions = Transaction::with("sale.customer")->paginate(10);
-        return view("transactions.index", compact("transactions"));
+        $query = Transaction::with(['branch', 'sale.customer']);
+
+        if ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        $transactions = $query->latest()->paginate(20);
+        $branches = Branch::all();
+
+        return view('transactions.index', compact('transactions', 'branches'));
     }
 
     public function create()
     {
-        $sales = Sale::with("customer")->get();
-        return view("transactions.create", compact("sales"));
+        $branches = Branch::all();
+        return view('transactions.create', compact('branches'));
     }
 
     public function store(StoreTransactionRequest $request)
     {
         Transaction::create($request->validated());
-        return redirect()->route("transactions.index")->with("success", "Transaction recorded successfully.");
+        return redirect()->route('transactions.index')->with('success', 'Transaction recorded.');
     }
 
     public function show(Transaction $transaction)
     {
-        $transaction->load("sale.customer");
-        return view("transactions.show", compact("transaction"));
-    }
-
-    public function edit(Transaction $transaction)
-    {
-        abort(404, "Editing completed transactions is not allowed.");
-    }
-
-    public function update(Request $request, Transaction $transaction)
-    {
-        abort(404, "Updating completed transactions is not allowed.");
-    }
-
-    public function destroy(Transaction $transaction)
-    {
-        $transaction->delete();
-        return redirect()->route("transactions.index")->with("success", "Transaction deleted successfully.");
+        $transaction->load(['branch', 'sale.customer', 'reference']);
+        return view('transactions.show', compact('transaction'));
     }
 }

@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
-    protected $fillable = ["name", "description", "price", "category_id"];
+    use HasFactory;
+
+    protected $fillable = ['name', 'sku', 'price', 'category_id', 'description'];
 
     public function category()
     {
@@ -18,8 +21,13 @@ class Product extends Model
         return $this->hasMany(Inventory::class);
     }
 
-    public function getSkuAttribute()
+    public function saleItems()
     {
-        return 'SKU-' . str_pad($this->id, 5, '0', STR_PAD_LEFT);
+        return $this->hasMany(SaleItem::class);
+    }
+
+    public function logs()
+    {
+        return $this->hasMany(InventoryLog::class);
     }
 }

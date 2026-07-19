@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Inventory extends Model
 {
-    protected $fillable = ["product_id", "branch_id", "quantity"];
+    use HasFactory;
+
+    protected $fillable = ['product_id', 'branch_id', 'quantity', 'low_stock_threshold', 'last_adjustment_reason'];
 
     public function product()
     {

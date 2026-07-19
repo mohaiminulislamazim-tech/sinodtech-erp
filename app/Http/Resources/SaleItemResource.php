@@ -7,13 +7,14 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class SaleItemResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'product' => new ProductResource($this->whenLoaded('product')),
+            'quantity' => (int) $this->quantity,
+            'price' => (float) $this->price,
+            'total' => (float) ($this->quantity * $this->price),
+        ];
     }
 }

@@ -1,73 +1,76 @@
-<x-app-layout>
-    <div class="flex">
-        @include("layouts.partials.sidebar")
+@extends('layouts.app')
 
-        <main class="w-full">
-            <x-slot name="header">
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    {{ __("Transactions") }}
-                </h2>
-            </x-slot>
-
-            <div class="py-12">
-                <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-lg font-medium text-gray-900">Transactions</h3>
-                                <a href="{{ route("transactions.create") }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Record Transaction</a>
-                            </div>
-                            @if (session("success"))
-                                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-                                    <span class="block sm:inline">{{ session("success") }}</span>
-                                </div>
-                            @endif
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sale ID</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Method</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Paid</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                        <th scope="col" class="relative px-6 py-3">
-                                            <span class="sr-only">Actions</span>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    @forelse ($transactions as $transaction)
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap">#{{ $transaction->id }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap">#{{ $transaction->sale_id }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap">{{ $transaction->sale->customer->name ?? 'N/A' }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap">{{ $transaction->payment_method }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap">${{ number_format($transaction->amount, 2) }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap">{{ $transaction->created_at->format('d M Y H:i') }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <a href="{{ route("transactions.show", $transaction) }}" class="text-indigo-600 hover:text-indigo-900">Show</a>
-                                                <form action="{{ route("transactions.destroy", $transaction) }}" method="POST" class="inline-block">
-                                                    @csrf
-                                                    @method("DELETE")
-                                                    <button type="submit" class="text-red-600 hover:text-red-900 ml-4">Delete</button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="7" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">No transaction records found.</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                            <div class="mt-4">
-                                {{ $transactions->links() }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+@section('content')
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Transaction Ledger</h1>
+        <a href="{{ route('transactions.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold text-xs uppercase tracking-widest hover:bg-indigo-700 transition">
+            Manual Entry
+        </a>
     </div>
-</x-app-layout>
+
+    <!-- Filters -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 p-4">
+        <form action="{{ route('transactions.index') }}" method="GET" class="flex flex-col md:flex-row gap-4">
+            <div class="w-full md:w-48">
+                <select name="branch_id" class="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">All Branches</option>
+                    @foreach($branches as $branch)
+                        <option value="{{ $branch->id }}" {{ request('branch_id') == $branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="w-full md:w-48">
+                <select name="type" class="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">All Types</option>
+                    <option value="income" {{ request('type') == 'income' ? 'selected' : '' }}>Income</option>
+                    <option value="expense" {{ request('type') == 'expense' ? 'selected' : '' }}>Expense</option>
+                </select>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 transition">
+                Filter
+            </button>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Branch</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Description</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                    @foreach($transactions as $transaction)
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                        <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">{{ $transaction->created_at->format('M d, Y') }}</td>
+                        <td class="px-6 py-4 text-sm text-slate-900 dark:text-white">{{ $transaction->branch->name ?? 'N/A' }}</td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $transaction->description }}</div>
+                            @if($transaction->sale)
+                                <div class="text-xs text-indigo-600 dark:text-indigo-400">Linked to Sale #{{ $transaction->sale->id }}</div>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="text-sm font-bold {{ $transaction->type === 'income' ? 'text-emerald-600' : 'text-rose-600' }}">
+                                {{ $transaction->type === 'income' ? '+' : '-' }} ${{ number_format($transaction->amount, 2) }}
+                            </span>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @if($transactions->hasPages())
+        <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-700">
+            {{ $transactions->links() }}
+        </div>
+        @endif
+    </div>
+</div>
+@endsection

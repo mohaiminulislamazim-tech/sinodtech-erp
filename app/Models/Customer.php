@@ -2,9 +2,27 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Customer extends Model
 {
-    protected $fillable = ["name", "email", "phone", "address"];
+    use HasFactory;
+
+    protected $fillable = ['name', 'email', 'phone', 'address'];
+
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
+    }
+
+    public function assignments()
+    {
+        return $this->hasMany(CustomerAssignment::class);
+    }
+
+    public function promotionLogs()
+    {
+        return $this->hasMany(PromotionLog::class);
+    }
 }

@@ -14,16 +14,14 @@ class StoreSaleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'customer_id' => 'required|exists:customers,id',
-            'subtotal' => 'required|numeric|min:0',
-            'discount' => 'nullable|numeric|min:0',
-            'tax' => 'nullable|numeric|min:0',
-            'shipping' => 'nullable|numeric|min:0',
-            'total_amount' => 'required|numeric|min:0',
-            'payment_method' => 'required|string|in:Cash,Card,Mobile Banking,Bank Transfer',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
+            'customer_id' => ['required', 'exists:customers,id'],
+            'branch_id' => ['nullable', 'exists:branches,id'],
+            'payment_method' => ['required', 'string', 'in:cash,card,bank_transfer'],
+            'discount' => ['nullable', 'numeric', 'min:0'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.product_id' => ['required', 'exists:products,id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.price' => ['required', 'numeric', 'min:0'],
         ];
     }
 }

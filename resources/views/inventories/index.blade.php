@@ -1,160 +1,123 @@
-<x-app-layout>
-    <div class="flex">
-        @include("layouts.partials.sidebar")
+@extends('layouts.app')
 
-        <main class="w-full">
-            <x-slot name="header">
-                <div class="flex justify-between items-center">
-                    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                        {{ __("Inventory Management") }}
-                    </h2>
-                    <div class="flex space-x-2">
-                        <a href="{{ route('inventories.transfer.form') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm shadow">
-                            Stock Transfer
-                        </a>
-                        <a href="{{ route('inventories.history') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded text-sm shadow">
-                            Inventory History
-                        </a>
-                        <a href="{{ route("inventories.create") }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm shadow">
-                            + Add Stock Record
-                        </a>
-                    </div>
-                </div>
-            </x-slot>
-
-            <div class="py-6">
-                <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    @if (session("success"))
-                        <div class="bg-emerald-100 border border-emerald-400 text-emerald-700 px-4 py-3 rounded relative mb-6" role="alert">
-                            <span class="block sm:inline">{{ session("success") }}</span>
-                        </div>
-                    @endif
-
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-6">
-                            <!-- Filters & Header -->
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-lg font-bold text-gray-900">Current Stock Levels</h3>
-                                <div class="flex space-x-2">
-                                    <a href="{{ route('inventories.index') }}" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-3 rounded text-xs border border-gray-300 {{ !request('low_stock') ? 'bg-indigo-50 border-indigo-500 text-indigo-600' : '' }}">
-                                        All Inventory
-                                    </a>
-                                    <a href="{{ route('inventories.index', ['low_stock' => 1]) }}" class="bg-red-50 hover:bg-red-100 text-red-700 font-semibold py-2 px-3 rounded text-xs border border-red-300 {{ request('low_stock') ? 'bg-red-100 border-red-500' : '' }}">
-                                        ⚠️ Low Stock Alerts
-                                    </a>
-                                </div>
-                            </div>
-
-                            <table class="min-w-full divide-y divide-gray-200 text-left text-sm">
-                                <thead class="bg-gray-50 text-gray-700 text-xs font-semibold uppercase">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3">Product</th>
-                                        <th scope="col" class="px-6 py-3">Branch</th>
-                                        <th scope="col" class="px-6 py-3 text-right">Quantity</th>
-                                        <th scope="col" class="px-6 py-3 text-center">Status</th>
-                                        <th scope="col" class="px-6 py-3 text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-100 text-gray-800">
-                                    @forelse ($inventories as $inventory)
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-6 py-4 font-medium">{{ $inventory->product->name ?? "N/A" }}</td>
-                                            <td class="px-6 py-4">{{ $inventory->branch->name ?? "Main Warehouse" }}</td>
-                                            <td class="px-6 py-4 text-right font-bold {{ $inventory->quantity < 10 ? 'text-red-600' : 'text-gray-900' }}">
-                                                {{ $inventory->quantity }}
-                                            </td>
-                                            <td class="px-6 py-4 text-center">
-                                                @if ($inventory->quantity < 10)
-                                                    <span class="bg-red-100 text-red-800 text-xs px-2.5 py-0.5 rounded-full font-semibold uppercase">Low Stock</span>
-                                                @else
-                                                    <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-semibold uppercase">In Stock</span>
-                                                @endif
-                                            </td>
-                                            <td class="px-6 py-4 text-right whitespace-nowrap text-xs font-semibold space-x-2">
-                                                <!-- Show Adjust Button -->
-                                                <button onclick="toggleAdjustModal({{ $inventory->id }}, '{{ addslashes($inventory->product->name) }}', {{ $inventory->quantity }})" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 py-1.5 px-3 rounded shadow-sm transition">
-                                                    Quick Adjust
-                                                </button>
-                                                
-                                                <a href="{{ route("inventories.show", $inventory) }}" class="text-blue-600 hover:text-blue-900 py-1 px-2 border rounded">Logs</a>
-                                                <a href="{{ route("inventories.edit", $inventory) }}" class="text-amber-600 hover:text-amber-900 py-1 px-2 border rounded">Edit</a>
-                                                
-                                                <form action="{{ route("inventories.destroy", $inventory) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this inventory record?');">
-                                                    @csrf
-                                                    @method("DELETE")
-                                                    <button type="submit" class="text-red-600 hover:text-red-900 py-1 px-2 border rounded">Delete</button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="5" class="px-6 py-8 text-center text-gray-500">No stock records found.</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                            <div class="mt-4">
-                                {{ $inventories->appends(request()->input())->links() }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+@section('content')
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Inventory Management</h1>
+        <div class="flex gap-2">
+            <a href="{{ route('inventories.transfer.form') }}" class="inline-flex items-center px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition font-semibold text-xs uppercase tracking-widest">
+                Transfer Stock
+            </a>
+            <a href="{{ route('inventories.create') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 transition">
+                New Record
+            </a>
+        </div>
     </div>
 
-    <!-- Quick Adjust Modal -->
-    <div id="adjust-modal" class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
-            <button onclick="closeAdjustModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
-            <h3 class="text-lg font-bold text-gray-900 mb-4">Stock In / Stock Out Adjustment</h3>
-            <p class="text-sm text-gray-600 mb-6">Adjusting stock for: <strong id="modal-product-name" class="text-indigo-600"></strong> (Current Qty: <span id="modal-current-qty" class="font-bold"></span>)</p>
+    <!-- Search & Filters -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 p-4">
+        <form action="{{ route('inventories.index') }}" method="GET" class="flex flex-col md:flex-row gap-4">
+            <div class="flex-1">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search products or branches..." class="w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                Filter
+            </button>
+        </form>
+    </div>
 
-            <form id="adjust-form" method="POST" action="">
+    <!-- Table -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Product</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Branch</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Quantity</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                    @foreach($inventories as $inventory)
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-medium text-slate-900 dark:text-white">{{ $inventory->product->name }}</div>
+                            <div class="text-xs text-slate-500 font-mono">{{ $inventory->product->sku }}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-300">
+                                {{ $inventory->branch->name }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-semibold {{ $inventory->quantity <= $inventory->low_stock_threshold ? 'text-rose-600' : 'text-slate-900 dark:text-white' }}">
+                                {{ $inventory->quantity }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            @if($inventory->quantity <= 0)
+                                <span class="inline-flex items-center rounded-full bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700 ring-1 ring-inset ring-rose-600/20 dark:bg-rose-400/10 dark:text-rose-400">Out of Stock</span>
+                            @elseif($inventory->quantity <= $inventory->low_stock_threshold)
+                                <span class="inline-flex items-center rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-400/10 dark:text-amber-400">Low Stock</span>
+                            @else
+                                <span class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-400/10 dark:text-emerald-400">Healthy</span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 text-right space-x-2">
+                            <button onclick="openAdjustModal({{ $inventory->id }}, {{ $inventory->quantity }})" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 transition text-sm">Adjust</button>
+                            <a href="{{ route('inventories.edit', $inventory) }}" class="text-slate-600 hover:text-slate-900 dark:text-slate-400 transition text-sm">Edit</a>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        @if($inventories->hasPages())
+        <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-700">
+            {{ $inventories->links() }}
+        </div>
+        @endif
+    </div>
+</div>
+
+<!-- Simple Adjustment Modal -->
+<div id="adjust-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-slate-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closeAdjustModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full p-6">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Adjust Stock Level</h3>
+            <form id="adjust-form" method="POST">
                 @csrf
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">Adjustment Type:</label>
-                    <div class="flex space-x-4">
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="type" value="Stock In" checked class="form-radio text-indigo-600">
-                            <span class="ml-2 text-sm text-gray-700 font-semibold text-emerald-600">Stock In (Increment)</span>
-                        </label>
-                        <label class="inline-flex items-center">
-                            <input type="radio" name="type" value="Stock Out" class="form-radio text-indigo-600">
-                            <span class="ml-2 text-sm text-gray-700 font-semibold text-red-600">Stock Out (Decrement)</span>
-                        </label>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">New Quantity</label>
+                        <input type="number" name="quantity" id="adjust-qty" class="mt-1 w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Reason for adjustment</label>
+                        <input type="text" name="reason" placeholder="e.g. Stock audit, breakage..." class="mt-1 w-full rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white" required>
                     </div>
                 </div>
-
-                <div class="mb-4">
-                    <label for="modal-quantity" class="block text-gray-700 text-sm font-bold mb-2">Quantity:</label>
-                    <input type="number" name="quantity" id="modal-quantity" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" min="1" value="1" required>
-                </div>
-
-                <div class="mb-6">
-                    <label for="modal-description" class="block text-gray-700 text-sm font-bold mb-2">Description / Reason:</label>
-                    <input type="text" name="description" id="modal-description" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Received shipment, Damaged stock, etc.">
-                </div>
-
-                <div class="flex justify-end space-x-2 border-t pt-4">
-                    <button type="button" onclick="closeAdjustModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded text-sm">Cancel</button>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm shadow">Apply Adjustment</button>
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" onclick="closeAdjustModal()" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold">Update Inventory</button>
                 </div>
             </form>
         </div>
     </div>
+</div>
 
-    <script>
-        function toggleAdjustModal(id, name, currentQty) {
-            const form = document.getElementById('adjust-form');
-            form.action = `/inventories/${id}/adjust`;
-            document.getElementById('modal-product-name').textContent = name;
-            document.getElementById('modal-current-qty').textContent = currentQty;
-            document.getElementById('adjust-modal').classList.remove('hidden');
-        }
-
-        function closeAdjustModal() {
-            document.getElementById('adjust-modal').classList.add('hidden');
-        }
-    </script>
-</x-app-layout>
+<script>
+    function openAdjustModal(id, currentQty) {
+        document.getElementById('adjust-form').action = `/inventories/${id}/adjust`;
+        document.getElementById('adjust-qty').value = currentQty;
+        document.getElementById('adjust-modal').classList.remove('hidden');
+    }
+    function closeAdjustModal() {
+        document.getElementById('adjust-modal').classList.add('hidden');
+    }
+</script>
+@endsection

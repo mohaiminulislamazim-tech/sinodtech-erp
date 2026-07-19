@@ -2,20 +2,27 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class InventoryLog extends Model
 {
-    protected $fillable = [
-        "inventory_id",
-        "type",
-        "quantity",
-        "reference_id",
-        "description"
-    ];
+    use HasFactory;
 
-    public function inventory()
+    protected $fillable = ['product_id', 'branch_id', 'user_id', 'quantity_changed', 'type', 'reason'];
+
+    public function product()
     {
-        return $this->belongsTo(Inventory::class);
+        return $this->belongsTo(Product::class);
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

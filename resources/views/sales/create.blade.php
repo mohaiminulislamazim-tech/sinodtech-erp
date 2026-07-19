@@ -1,318 +1,185 @@
-<x-app-layout>
-    <div class="flex" x-data="pos()">
-        @include("layouts.partials.sidebar")
+@extends('layouts.app')
 
-        <main class="w-full">
-            <x-slot name="header">
-                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    {{ __("POS Terminal - Create Sale") }}
-                </h2>
-            </x-slot>
+@section('content')
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Point of Sale</h1>
+        <div class="text-sm text-slate-500 dark:text-slate-400">
+            Branch: <span class="font-semibold text-slate-900 dark:text-white">{{ Auth::user()->employee->branch->name ?? 'Default' }}</span>
+        </div>
+    </div>
 
-            <div class="py-6">
-                <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    @if ($errors->any())
-                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-                            <strong>Validation Errors:</strong>
-                            <ul class="mt-2 list-disc list-inside">
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
+    <form action="{{ route('sales.store') }}" method="POST" id="pos-form" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        @csrf
+        <!-- Product Selection -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 p-6">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Search Products</label>
+                    <div class="relative">
+                        <input type="text" id="product-search" placeholder="Scan barcode or type name..." class="w-full rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500 pl-10">
+                        <svg class="w-5 h-5 absolute left-3 top-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                </div>
 
-                    <form @submit.prevent="submit" action="{{ route('sales.store') }}" method="POST" id="pos-form">
-                        @csrf
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <!-- Left: Sale Items POS Table -->
-                            <div class="lg:col-span-2 bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                                <div class="flex justify-between items-center mb-6">
-                                    <h3 class="text-lg font-bold text-gray-900">Sale Cart Items</h3>
-                                    <button type="button" @click="addItem" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm flex items-center transition-colors">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                        Add Item
-                                    </button>
-                                 </div>
-
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr class="border-b text-gray-700 text-xs font-semibold uppercase bg-gray-50">
-                                                <th class="py-3 px-4 w-1/2">Product Search</th>
-                                                <th class="py-3 px-4 w-1/6">Quantity</th>
-                                                <th class="py-3 px-4 w-1/6 text-right">Price</th>
-                                                <th class="py-3 px-4 w-1/6 text-right">Total</th>
-                                                <th class="py-3 px-4 text-center w-12"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-gray-100">
-                                            <template x-for="(item, index) in items" :key="index">
-                                                <tr class="item-row">
-                                                    <td class="py-4 px-4 relative">
-                                                        <!-- Dynamic Search Field -->
-                                                        <div class="relative">
-                                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                                                </svg>
-                                                            </div>
-                                                            <input type="text" placeholder="Type product name or SKU..."
-                                                                   class="product-search-input shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2.5 pl-10 pr-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
-                                                                   required autocomplete="off"
-                                                                   x-model="item.search"
-                                                                   @input.debounce.300ms="searchProducts(index)"
-                                                                   @keydown.down.prevent="selectNextProduct(index)"
-                                                                   @keydown.up.prevent="selectPreviousProduct(index)"
-                                                                   @keydown.enter.prevent="selectProduct(index)"
-                                                                   >
-                                                        </div>
-                                                        <!-- Hidden input for ID -->
-                                                        <input type="hidden" :name="`items[${index}][product_id]`" x-model="item.product_id" required>
-
-                                                        <!-- Selected Product Info Banner -->
-                                                        <div x-show="item.product_id" class="selected-product-info text-xs mt-2 bg-blue-50 p-2 rounded border border-blue-100">
-                                                            <div class="flex justify-between items-center text-blue-800 font-semibold mb-1">
-                                                                <span x-text="item.sku"></span>
-                                                                <span x-text="item.category" class="text-[10px] uppercase bg-blue-200 px-1.5 py-0.5 rounded"></span>
-                                                            </div>
-                                                            <div class="flex justify-between text-blue-700">
-                                                                <span>Price: <span class="font-bold" x-text="formatCurrency(item.price)"></span></span>
-                                                                <span>Stock: <span class="font-bold" x-text="item.stock"></span></span>
-                                                            </div>
-                                                        </div>
-
-                                                        <!-- Dropdown Suggestions Popup -->
-                                                        <div x-show="item.suggestions.length > 0" class="suggestions-dropdown absolute left-4 right-4 mt-1 z-50 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-                                                            <template x-for="(product, productIndex) in item.suggestions" :key="product.id">
-                                                                <div @click="selectProduct(index, productIndex)"
-                                                                     :class="{ 'bg-blue-100': item.selectedSuggestionIndex === productIndex }"
-                                                                     class="py-3 px-4 text-sm border-b border-gray-100 last:border-0 transition-colors cursor-pointer hover:bg-blue-50">
-                                                                    <div class="flex justify-between items-start mb-1">
-                                                                        <span class="font-bold text-gray-800" x-text="product.name"></span>
-                                                                        <span class="font-bold text-blue-600" x-text="formatCurrency(product.price)"></span>
-                                                                    </div>
-                                                                    <div class="flex justify-between items-center text-xs">
-                                                                        <span class="text-gray-500 font-mono" x-text="product.sku"></span>
-                                                                        <span :class="product.stock > 0 ? 'text-emerald-600 font-semibold' : 'text-red-500 font-bold'"
-                                                                              x-text="product.stock > 0 ? `${product.stock} in stock` : 'Out of Stock'">
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            </template>
-                                                        </div>
-                                                    </td>
-                                                    <td class="py-4 px-4">
-                                                        <input type="number" :name="`items[${index}][quantity]`"
-                                                               class="quantity-input shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2.5 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
-                                                               min="1" x-model.number="item.quantity" required
-                                                               :disabled="!item.product_id"
-                                                               @input="calculateTotal(index)">
-                                                        <div class="text-[10px] text-red-500 font-semibold mt-1"
-                                                             x-show="item.quantity > item.stock"
-                                                        >
-                                                            Exceeds stock!
-                                                        </div>
-                                                    </td>
-                                                    <td class="py-4 px-4 text-right font-medium text-gray-600 product-price-display" x-text="formatCurrency(item.price)"></td>
-                                                    <td class="py-4 px-4 text-right font-bold text-gray-900 row-total-display" x-text="formatCurrency(item.total)"></td>
-                                                    <td class="py-4 px-4 text-center">
-                                                        <button type="button" @click="removeItem(index)" class="text-red-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md transition-colors font-bold">
-                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            </template>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <!-- Right: Customer, Payment & Calculations -->
-                            <div class="lg:col-span-1 space-y-6">
-                                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 sticky top-6">
-                                    <h3 class="text-lg font-bold text-gray-900 mb-6 border-b pb-2">Sale Details</h3>
-
-                                    <!-- Customer Select -->
-                                    <div class="mb-5">
-                                        <label for="customer_id" class="block text-gray-700 text-sm font-bold mb-2">Customer:</label>
-                                        <select name="customer_id" id="customer_id" class="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2.5 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow" required>
-                                            <option value="">Select a customer</option>
-                                            @foreach ($customers as $customer)
-                                                <option value="{{ $customer->id }}" {{ old("customer_id") == $customer->id ? "selected" : "" }}>
-                                                    {{ $customer->name }} ({{ $customer->email }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-                                    <!-- Payment Method -->
-                                    <div class="mb-6">
-                                        <label for="payment_method" class="block text-gray-700 text-sm font-bold mb-2">Payment Method:</label>
-                                        <select name="payment_method" id="payment_method" class="shadow-sm appearance-none border border-gray-300 rounded-lg w-full py-2.5 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow" required>
-                                            <option value="Cash">Cash</option>
-                                            <option value="Card">Card</option>
-                                            <option value="Mobile Banking">Mobile Banking</option>
-                                            <option value="Bank Transfer">Bank Transfer</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- Live Calculations Summary -->
-                                    <div class="space-y-4 border-t border-b border-gray-100 py-5 my-5 text-sm bg-gray-50/50 rounded-lg px-4">
-                                        <div class="flex justify-between items-center text-gray-600">
-                                            <span class="font-medium">Subtotal:</span>
-                                            <span class="font-bold text-gray-800" x-text="formatCurrency(subtotal)"></span>
-                                            <input type="hidden" name="subtotal" :value="subtotal">
-                                        </div>
-                                        <div class="flex justify-between items-center text-gray-600">
-                                            <span class="font-medium">Discount ($):</span>
-                                            <input type="number" name="discount" class="shadow-sm border border-gray-300 rounded w-24 py-1 px-2 text-right text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" min="0" step="0.01" x-model.number="discount">
-                                        </div>
-                                        <div class="flex justify-between items-center text-gray-600">
-                                            <span class="font-medium">Tax ($):</span>
-                                            <input type="number" name="tax" class="shadow-sm border border-gray-300 rounded w-24 py-1 px-2 text-right text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" min="0" step="0.01" x-model.number="tax">
-                                        </div>
-                                        <div class="flex justify-between items-center text-gray-600">
-                                            <span class="font-medium">Shipping ($):</span>
-                                            <input type="number" name="shipping" class="shadow-sm border border-gray-300 rounded w-24 py-1 px-2 text-right text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" min="0" step="0.01" x-model.number="shipping">
-                                        </div>
-                                        <div class="flex justify-between items-center text-lg font-bold text-gray-900 border-t border-gray-200 pt-4 mt-2">
-                                            <span>Balance Due:</span>
-                                            <span class="text-blue-600 text-xl" x-text="formatCurrency(grandTotal)"></span>
-                                            <input type="hidden" name="total_amount" :value="grandTotal">
-                                        </div>
-                                    </div>
-
-                                    <div class="mt-6">
-                                        <button type="submit"
-                                                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 shadow-lg shadow-emerald-600/30 transition-all duration-200 flex justify-center items-center gap-2 text-lg"
-                                                :disabled="!canSubmit"
-                                                :class="{ 'opacity-50 cursor-not-allowed': !canSubmit }">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                            Complete Sale
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
+                <!-- Cart Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
+                                <th class="py-3">Product</th>
+                                <th class="py-3">Price</th>
+                                <th class="py-3">Qty</th>
+                                <th class="py-3">Total</th>
+                                <th class="py-3 text-right"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-items" class="divide-y divide-slate-50 dark:divide-slate-700/50">
+                            <!-- Items added via JS -->
+                        </tbody>
+                    </table>
+                    <div id="empty-cart" class="py-12 text-center text-slate-500 dark:text-slate-400">
+                        <p>No items in cart</p>
+                    </div>
                 </div>
             </div>
-        </main>
-    </div>
-    @push("scripts")
-    <script>
-        function pos() {
-            return {
-                items: [{
-                    product_id: '',
-                    search: '',
-                    suggestions: [],
-                    selectedSuggestionIndex: -1,
-                    price: 0,
-                    quantity: 1,
-                    total: 0,
-                    stock: 0,
-                    sku: '',
-                    category: '',
-                }],
-                discount: 0,
-                tax: 0,
-                shipping: 0,
+        </div>
 
-                get subtotal() {
-                    return this.items.reduce((acc, item) => acc + item.total, 0);
-                },
+        <!-- Checkout Sidebar -->
+        <div class="space-y-6">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 p-6 sticky top-6">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-6">Order Summary</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Customer</label>
+                        <select name="customer_id" class="w-full rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+                            @foreach($customers as $customer)
+                                <option value="{{ $customer->id }}">{{ $customer->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                get grandTotal() {
-                    return this.subtotal - this.discount + this.tax + this.shipping;
-                },
+                    <div class="border-t border-slate-100 dark:border-slate-700 pt-4 space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500">Subtotal</span>
+                            <span id="summary-subtotal" class="font-medium text-slate-900 dark:text-white">$0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500">Discount</span>
+                            <input type="number" name="discount" id="pos-discount" value="0" class="w-20 text-right rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white text-sm py-1">
+                        </div>
+                        <div class="flex justify-between text-lg font-bold border-t border-slate-100 dark:border-slate-700 pt-4">
+                            <span class="text-slate-900 dark:text-white">Total</span>
+                            <span id="summary-total" class="text-indigo-600 dark:text-indigo-400">$0.00</span>
+                        </div>
+                    </div>
 
-                get canSubmit() {
-                    return this.items.length > 0 && this.items.every(item => item.product_id && item.quantity > 0 && item.quantity <= item.stock);
-                },
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Payment Method</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="relative flex cursor-pointer rounded-xl border border-slate-200 dark:border-slate-700 p-3 focus:outline-none transition hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                <input type="radio" name="payment_method" value="cash" checked class="sr-only">
+                                <span class="text-sm font-medium text-slate-900 dark:text-white">Cash</span>
+                            </label>
+                            <label class="relative flex cursor-pointer rounded-xl border border-slate-200 dark:border-slate-700 p-3 focus:outline-none transition hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                <input type="radio" name="payment_method" value="card" class="sr-only">
+                                <span class="text-sm font-medium text-slate-900 dark:text-white">Card</span>
+                            </label>
+                        </div>
+                    </div>
 
-                addItem() {
-                    this.items.push({
-                        product_id: '',
-                        search: '',
-                        suggestions: [],
-                        selectedSuggestionIndex: -1,
-                        price: 0,
-                        quantity: 1,
-                        total: 0,
-                        stock: 0,
-                        sku: '',
-                        category: '',
-                    });
-                },
+                    <button type="submit" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-indigo-200 dark:shadow-none transition-transform active:scale-[0.98]">
+                        Complete Sale
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
 
-                removeItem(index) {
-                    this.items.splice(index, 1);
-                },
+<script>
+    // Minimalistic POS cart logic
+    let cart = [];
+    const products = @json($products);
 
-                async searchProducts(index) {
-                    const search = this.items[index].search;
-                    if (search.length < 2) {
-                        this.items[index].suggestions = [];
-                        return;
-                    }
+    document.getElementById('product-search').addEventListener('input', function(e) {
+        const query = e.target.value.toLowerCase();
+        if (query.length < 2) return;
 
-                    const response = await fetch(`/api/v1/products?search=${encodeURIComponent(search)}`);
-                    const data = await response.json();
-                    this.items[index].suggestions = data.data;
-                },
-
-                selectProduct(index, productIndex = null) {
-                    if (productIndex === null) {
-                        productIndex = this.items[index].selectedSuggestionIndex;
-                    }
-
-                    if (productIndex >= 0 && productIndex < this.items[index].suggestions.length) {
-                        const product = this.items[index].suggestions[productIndex];
-                        this.items[index].product_id = product.id;
-                        this.items[index].price = product.price;
-                        this.items[index].stock = product.stock;
-                        this.items[index].sku = product.sku;
-                        this.items[index].category = product.category ? product.category.name : 'N/A';
-                        this.items[index].search = product.name;
-                        this.items[index].suggestions = [];
-                        this.calculateTotal(index);
-                    }
-                },
-
-                calculateTotal(index) {
-                    const item = this.items[index];
-                    item.total = item.price * item.quantity;
-                },
-
-                formatCurrency(amount) {
-                    return new Intl.NumberFormat('en-US', {
-                        style: 'currency',
-                        currency: 'USD'
-                    }).format(amount);
-                },
-
-                selectNextProduct(index) {
-                    const item = this.items[index];
-                    if (item.selectedSuggestionIndex < item.suggestions.length - 1) {
-                        item.selectedSuggestionIndex++;
-                    }
-                },
-
-                selectPreviousProduct(index) {
-                    const item = this.items[index];
-                    if (item.selectedSuggestionIndex > 0) {
-                        item.selectedSuggestionIndex--;
-                    }
-                },
-
-                submit() {
-                    if (this.canSubmit) {
-                        this.$el.submit();
-                    }
-                }
-            }
+        const product = products.find(p => p.name.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query));
+        if (product) {
+            addToCart(product);
+            e.target.value = '';
         }
-    </script>
-    @endpush
-</x-app-layout>
+    });
+
+    function addToCart(product) {
+        const existing = cart.find(item => item.id === product.id);
+        if (existing) {
+            existing.qty++;
+        } else {
+            cart.push({ ...product, qty: 1 });
+        }
+        renderCart();
+    }
+
+    function renderCart() {
+        const tbody = document.getElementById('cart-items');
+        const empty = document.getElementById('empty-cart');
+        tbody.innerHTML = '';
+        
+        if (cart.length === 0) {
+            empty.classList.remove('hidden');
+        } else {
+            empty.classList.add('hidden');
+            let subtotal = 0;
+            cart.forEach((item, index) => {
+                const total = item.price * item.qty;
+                subtotal += total;
+                tbody.innerHTML += `
+                    <tr class="text-sm">
+                        <td class="py-4 font-medium text-slate-900 dark:text-white">${item.name}<input type="hidden" name="items[${index}][product_id]" value="${item.id}"></td>
+                        <td class="py-4">$${item.price}<input type="hidden" name="items[${index}][price]" value="${item.price}"></td>
+                        <td class="py-4">
+                            <input type="number" name="items[${index}][quantity]" value="${item.qty}" class="w-16 rounded-lg border-slate-200 dark:border-slate-700 dark:bg-slate-900 py-1" onchange="updateQty(${item.id}, this.value)">
+                        </td>
+                        <td class="py-4 font-semibold">$${total.toFixed(2)}</td>
+                        <td class="py-4 text-right">
+                            <button type="button" onclick="removeItem(${item.id})" class="text-rose-500 hover:text-rose-700">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            updateSummary(subtotal);
+        }
+    }
+
+    function updateQty(id, qty) {
+        const item = cart.find(i => i.id === id);
+        if (item) item.qty = parseInt(qty);
+        renderCart();
+    }
+
+    function removeItem(id) {
+        cart = cart.filter(i => i.id !== id);
+        renderCart();
+    }
+
+    function updateSummary(subtotal) {
+        const discount = parseFloat(document.getElementById('pos-discount').value) || 0;
+        document.getElementById('summary-subtotal').innerText = '$' + subtotal.toFixed(2);
+        document.getElementById('summary-total').innerText = '$' + (subtotal - discount).toFixed(2);
+    }
+
+    document.getElementById('pos-discount').addEventListener('input', () => renderCart());
+</script>
+
+<style>
+    input[type="radio"]:checked + span {
+        @apply ring-2 ring-indigo-600 border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400;
+    }
+</style>
+@endsection
