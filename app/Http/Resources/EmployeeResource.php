@@ -5,18 +5,18 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class BranchResource extends JsonResource
+class EmployeeResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'location' => $this->location,
-            'phone' => $this->phone,
             'email' => $this->email,
-            'employees_count' => $this->whenCounted('employees'),
-            'inventories_count' => $this->whenCounted('inventories'),
+            'phone' => $this->phone,
+            'branch' => new BranchResource($this->whenLoaded('branch')),
+            'status' => $this->status,
+            'salary' => (float) $this->salary,
             'created_at' => $this->created_at->toDateTimeString(),
         ];
     }

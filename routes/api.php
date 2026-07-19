@@ -1,18 +1,28 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api;
+use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\SaleController;
+use App\Http\Controllers\Api\BranchController;
+use App\Http\Controllers\Api\InventoryController;
+use App\Http\Controllers\Api\TransactionController;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
-// API routes grouped under prefix 'v1' and name 'api.v1.' to avoid conflicts
 Route::prefix('v1')->name('api.v1.')->group(function () {
-    Route::apiResource('products', Api\ProductController::class);
-    Route::apiResource('customers', Api\CustomerController::class);
-    Route::apiResource('sales', Api\SaleController::class);
-    Route::apiResource('inventories', Api\InventoryController::class);
-    Route::apiResource('transactions', Api\TransactionController::class);
+    // Public API Check
+    Route::get('/status', function() {
+        return response()->json(['status' => 'online', 'version' => '1.0.0']);
+    });
+
+    // Authenticated API Routes
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::apiResource('products', ProductController::class);
+        Route::apiResource('customers', CustomerController::class);
+        Route::apiResource('sales', SaleController::class)->only(['index', 'store', 'show']);
+        Route::apiResource('branches', BranchController::class);
+        
+        Route::get('inventories', [InventoryController::class, 'index']);
+        Route::post('inventories/transfer', [InventoryController::class, 'transfer']);
+        Route::apiResource('transactions', TransactionController::class)->only(['index', 'store', 'show']);
+    });
 });

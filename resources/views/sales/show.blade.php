@@ -1,158 +1,92 @@
-<x-app-layout>
-    <div class="flex">
-        <!-- Print wrapper: Hide sidebar and navigation during browser printing -->
-        <div class="no-print">
-            @include("layouts.partials.sidebar")
+@extends('layouts.app')
+
+@section('content')
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Sale Detail #{{ $sale->id }}</h1>
+        <div class="flex space-x-3">
+            <a href="{{ route('sales.pdf', $sale) }}" class="inline-flex items-center px-4 py-2 bg-rose-600 text-white rounded-lg font-semibold text-xs uppercase tracking-widest hover:bg-rose-700 transition">
+                Download PDF
+            </a>
+            <a href="{{ route('sales.index') }}" class="inline-flex items-center px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-semibold text-xs uppercase tracking-widest hover:bg-slate-200 transition">
+                Back to List
+            </a>
         </div>
-
-        <main class="w-full">
-            <x-slot name="header">
-                <div class="flex justify-between items-center no-print">
-                    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                        {{ __("POS Sale Invoice") }}
-                    </h2>
-                    <div class="flex space-x-2">
-                        <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-sm shadow flex items-center transition">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H9a2 2 0 00-2 2v3a2 2 0 002 2zm5-14V3m0 0l-3 3m3-3l3 3"></path></svg>
-                            Print Invoice
-                        </button>
-                        <a href="{{ route('sales.pdf', $sale->id) }}" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded text-sm shadow flex items-center transition">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                            Download Invoice
-                        </a>
-                        <a href="{{ route('sales.index') }}" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded text-sm shadow flex items-center transition">
-                            Back to Sales
-                        </a>
-                    </div>
-                </div>
-            </x-slot>
-
-            <div class="py-6">
-                <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                    <!-- Invoice Card -->
-                    <div class="bg-white shadow-sm sm:rounded-lg border border-gray-200 p-8 print:border-0 print:shadow-none" id="invoice-print-area">
-                        <!-- Header Section -->
-                        <div class="flex justify-between border-b pb-6 mb-6">
-                            <div>
-                                <h1 class="text-3xl font-extrabold text-indigo-600 tracking-tight">SINODTECH ERP</h1>
-                                <p class="text-xs text-gray-500 mt-1">
-                                    123 Business Avenue, Suite 100<br>
-                                    support@sinodtech.com | +1 (555) 123-4567
-                                </p>
-                            </div>
-                            <div class="text-right">
-                                <h2 class="text-xl font-bold text-gray-800">INVOICE</h2>
-                                <p class="text-sm text-gray-500 mt-1">
-                                    <strong>Invoice ID:</strong> #{{ $sale->id }}<br>
-                                    <strong>Date:</strong> {{ $sale->created_at->format('d M Y, H:i') }}
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Info Section -->
-                        <div class="grid grid-cols-2 gap-6 mb-8 text-sm">
-                            <div>
-                                <h3 class="font-semibold text-gray-700 uppercase tracking-wider text-xs mb-2">Customer Details:</h3>
-                                <p class="text-gray-900 font-bold">{{ $sale->customer->name ?? 'Walk-in Customer' }}</p>
-                                <p class="text-gray-500">{{ $sale->customer->email ?? 'N/A' }}</p>
-                                <p class="text-gray-500">{{ $sale->customer->phone ?? 'N/A' }}</p>
-                            </div>
-                            <div class="text-right">
-                                <h3 class="font-semibold text-gray-700 uppercase tracking-wider text-xs mb-2">Payment Info:</h3>
-                                <p class="text-gray-900"><span class="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded font-bold uppercase">{{ $sale->payment_method }}</span></p>
-                            </div>
-                        </div>
-
-                        <!-- Items Table -->
-                        <div class="border rounded-lg overflow-hidden mb-6">
-                            <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="bg-gray-50 border-b text-xs font-semibold text-gray-700 uppercase">
-                                        <th class="py-3 px-4">Product Name</th>
-                                        <th class="py-3 px-4 text-right w-20">Qty</th>
-                                        <th class="py-3 px-4 text-right w-32">Unit Price</th>
-                                        <th class="py-3 px-4 text-right w-32">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y text-sm">
-                                    @foreach ($sale->items as $item)
-                                        <tr class="hover:bg-gray-50 text-gray-800">
-                                            <td class="py-4 px-4 font-medium">{{ $item->product->name ?? 'Unknown Product' }}</td>
-                                            <td class="py-4 px-4 text-right">{{ $item->quantity }}</td>
-                                            <td class="py-4 px-4 text-right">${{ number_format($item->price, 2) }}</td>
-                                            <td class="py-4 px-4 text-right font-semibold">${{ number_format($item->quantity * $item->price, 2) }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Summary Column -->
-                        <div class="flex justify-end text-sm">
-                            <div class="w-72 space-y-2 border-t pt-4">
-                                <div class="flex justify-between text-gray-600">
-                                    <span>Subtotal:</span>
-                                    <span class="font-medium">${{ number_format($sale->subtotal, 2) }}</span>
-                                </div>
-                                @if($sale->discount > 0)
-                                    <div class="flex justify-between text-red-600">
-                                        <span>Discount:</span>
-                                        <span>-${{ number_format($sale->discount, 2) }}</span>
-                                    </div>
-                                @endif
-                                @if($sale->tax > 0)
-                                    <div class="flex justify-between text-gray-600">
-                                        <span>Tax:</span>
-                                        <span>+${{ number_format($sale->tax, 2) }}</span>
-                                    </div>
-                                @endif
-                                @if($sale->shipping > 0)
-                                    <div class="flex justify-between text-gray-600">
-                                        <span>Shipping:</span>
-                                        <span>+${{ number_format($sale->shipping, 2) }}</span>
-                                    </div>
-                                @endif
-                                <div class="flex justify-between text-base font-bold text-gray-900 border-t pt-2">
-                                    <span>Grand Total:</span>
-                                    <span>${{ number_format($sale->total_amount, 2) }}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Footer Thank You Banner -->
-                        <div class="text-center text-xs text-gray-400 mt-12 border-t pt-4">
-                            Thank you for shopping with us! For questions contact billing@sinodtech.com.
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
     </div>
 
-    <!-- Print Media Query Styling -->
-    <style>
-        @media print {
-            body {
-                background: white;
-                color: black;
-            }
-            .no-print, header, nav, #sidebar {
-                display: none !important;
-            }
-            main {
-                width: 100% !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            .py-6, .py-12 {
-                padding-top: 0 !important;
-                padding-bottom: 0 !important;
-            }
-            #invoice-print-area {
-                border: 0 !important;
-                box-shadow: none !important;
-                padding: 0 !important;
-            }
-        }
-    </style>
-</x-app-layout>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Order Items -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-50 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Line Items</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-50 dark:border-slate-700">
+                                <th class="px-6 py-4">Product</th>
+                                <th class="px-6 py-4 text-right">Qty</th>
+                                <th class="px-6 py-4 text-right">Unit Price</th>
+                                <th class="px-6 py-4 text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50 dark:divide-slate-700">
+                            @foreach($sale->items as $item)
+                            <tr>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm font-bold text-slate-900 dark:text-white">{{ $item->product->name }}</p>
+                                    <p class="text-[10px] text-slate-400 font-mono uppercase">{{ $item->product->sku }}</p>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-right text-slate-600 dark:text-slate-400">{{ $item->quantity }}</td>
+                                <td class="px-6 py-4 text-sm text-right text-slate-600 dark:text-slate-400">${{ number_format($item->price, 2) }}</td>
+                                <td class="px-6 py-4 text-sm text-right font-bold text-slate-900 dark:text-white">${{ number_format($item->quantity * $item->price, 2) }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary & Customer -->
+        <div class="space-y-6">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 p-6">
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-6">Payment Summary</h3>
+                <div class="space-y-3 border-b border-slate-50 dark:border-slate-700 pb-4">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500">Subtotal</span>
+                        <span class="font-medium text-slate-900 dark:text-white">${{ number_format($sale->subtotal, 2) }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500">Discount</span>
+                        <span class="font-medium text-rose-600">-${{ number_format($sale->discount, 2) }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-500">Tax</span>
+                        <span class="font-medium text-slate-900 dark:text-white">${{ number_format($sale->tax, 2) }}</span>
+                    </div>
+                </div>
+                <div class="flex justify-between pt-4">
+                    <span class="text-base font-bold text-slate-900 dark:text-white">Total Amount</span>
+                    <span class="text-xl font-black text-indigo-600 dark:text-indigo-400">${{ number_format($sale->total_amount, 2) }}</span>
+                </div>
+                <div class="mt-6">
+                    <span class="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 bg-slate-50 dark:bg-slate-900 text-xs font-bold text-slate-600 dark:text-slate-400 border border-slate-100 dark:border-slate-700">
+                        Paid via {{ ucfirst($sale->payment_method) }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-700 p-6">
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-4">Customer Info</h3>
+                <p class="text-sm font-bold text-slate-900 dark:text-white">{{ $sale->customer->name ?? 'Guest Customer' }}</p>
+                @if($sale->customer)
+                    <p class="text-xs text-slate-500 mt-1">{{ $sale->customer->email }}</p>
+                    <p class="text-xs text-slate-500">{{ $sale->customer->phone }}</p>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
